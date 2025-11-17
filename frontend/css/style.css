@@ -1,4 +1,5 @@
 body {
+    margin:0%;
     font-family: Arial, sans-serif;
     display: flex;
     min-height: 100vh;
@@ -82,4 +83,13 @@ header h1 {
 .add-task-btn:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+}
+
+/* Adicionar Tarefa */
+.newTask{
+    background-color: #00bcd4;
+    height: 50%;
+    width: 430px;
+    position: fixed;
+    display: none;
 }
