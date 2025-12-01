@@ -46,8 +46,12 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Variável para armazenar todas as tarefas e filtro atual
+let todasTarefas = [];
+let filtroAtual = 'todas'; // 'todas', 'pendentes', 'concluidas'
+
 // Função para carregar tarefas do backend
-async function carregarTarefas() {
+async function carregarTarefas(filtro = 'todas') {
     try {
         const response = await fetch(`${API_URL}/tarefas`);
         
@@ -55,23 +59,79 @@ async function carregarTarefas() {
             throw new Error(`Erro HTTP: ${response.status}`);
         }
         
-        const tarefas = await response.json();
+        todasTarefas = await response.json();
         
-        // Limpar lista atual
-        taskList.innerHTML = '';
-        
-        // Renderizar cada tarefa
-        tarefas.forEach(tarefa => {
-            adicionarTarefaNaLista(tarefa);
-        });
-        
-        // Adicionar event listeners após renderizar
-        adicionarEventListeners();
+        // Aplicar filtro
+        aplicarFiltro(filtro);
     } catch (error) {
         console.error('Erro ao carregar tarefas:', error);
         if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
             taskList.innerHTML = '<li style="color: red; padding: 20px;">⚠️ Erro: Não foi possível conectar ao servidor. Verifique se o backend está rodando em http://localhost:5000</li>';
         }
+    }
+}
+
+// Função para aplicar filtro nas tarefas
+function aplicarFiltro(filtro) {
+    filtroAtual = filtro;
+    
+    // Filtrar tarefas baseado no filtro selecionado
+    let tarefasFiltradas = [];
+    
+    switch(filtro) {
+        case 'pendentes':
+            tarefasFiltradas = todasTarefas.filter(tarefa => !tarefa.completa);
+            break;
+        case 'concluidas':
+            tarefasFiltradas = todasTarefas.filter(tarefa => tarefa.completa);
+            break;
+        case 'todas':
+        default:
+            tarefasFiltradas = todasTarefas;
+            break;
+    }
+    
+    // Limpar lista atual
+    taskList.innerHTML = '';
+    
+    // Renderizar tarefas filtradas
+    if (tarefasFiltradas.length === 0) {
+        let mensagem = '';
+        switch(filtro) {
+            case 'pendentes':
+                mensagem = 'Nenhuma tarefa pendente';
+                break;
+            case 'concluidas':
+                mensagem = 'Nenhuma tarefa concluída';
+                break;
+            default:
+                mensagem = 'Nenhuma tarefa cadastrada';
+        }
+        taskList.innerHTML = `<li style="color: #666; padding: 20px; text-align: center;">${mensagem}</li>`;
+    } else {
+        tarefasFiltradas.forEach(tarefa => {
+            adicionarTarefaNaLista(tarefa);
+        });
+    }
+    
+    // Adicionar event listeners após renderizar
+    adicionarEventListeners();
+    
+    // Atualizar estado visual dos botões do menu
+    atualizarMenuAtivo(filtro);
+}
+
+// Função para atualizar o estado visual do menu
+function atualizarMenuAtivo(filtro) {
+    // Remove classe active de todos os itens
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Adiciona classe active no item selecionado
+    const itemAtivo = document.querySelector(`[data-filtro="${filtro}"]`);
+    if (itemAtivo) {
+        itemAtivo.classList.add('active');
     }
 }
 
@@ -185,8 +245,8 @@ taskForm.addEventListener('submit', async (e) => {
         document.body.style.overflow = 'auto';
         taskForm.reset();
         
-        // Recarregar lista de tarefas
-        await carregarTarefas();
+        // Recarregar lista de tarefas mantendo o filtro atual
+        await carregarTarefas(filtroAtual);
     } catch (error) {
         alert('Erro ao criar tarefa: ' + error.message);
     }
@@ -209,6 +269,8 @@ function adicionarEventListeners() {
                 try {
                     await marcarConcluida(taskId);
                     taskItem.classList.add('completed');
+                    // Recarregar tarefas mantendo o filtro atual
+                    await carregarTarefas(filtroAtual);
                 } catch (error) {
                     checkbox.checked = false;
                     alert('Erro ao marcar tarefa como concluída');
@@ -226,7 +288,8 @@ function adicionarEventListeners() {
             if (confirm('Tem certeza que deseja deletar esta tarefa?')) {
                 try {
                     await deletarTarefa(taskId);
-                    btn.closest('.task-item').remove();
+                    // Recarregar tarefas mantendo o filtro atual
+                    await carregarTarefas(filtroAtual);
                 } catch (error) {
                     alert('Erro ao deletar tarefa');
                 }
@@ -265,7 +328,34 @@ function adicionarEventListeners() {
     });
 }
 
-// Carregar tarefas quando a página carregar
+// Event listeners para os botões do menu
 document.addEventListener('DOMContentLoaded', () => {
-    carregarTarefas();
+    // Carregar tarefas iniciais
+    carregarTarefas('todas');
+    
+    // Adicionar event listeners nos botões do menu
+    const menuTodas = document.getElementById('menuTodas');
+    const menuPendentes = document.getElementById('menuPendentes');
+    const menuConcluidas = document.getElementById('menuConcluidas');
+    
+    if (menuTodas) {
+        menuTodas.addEventListener('click', (e) => {
+            e.preventDefault();
+            aplicarFiltro('todas');
+        });
+    }
+    
+    if (menuPendentes) {
+        menuPendentes.addEventListener('click', (e) => {
+            e.preventDefault();
+            aplicarFiltro('pendentes');
+        });
+    }
+    
+    if (menuConcluidas) {
+        menuConcluidas.addEventListener('click', (e) => {
+            e.preventDefault();
+            aplicarFiltro('concluidas');
+        });
+    }
 });
