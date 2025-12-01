@@ -104,6 +104,36 @@ def marcar_concluida(id_tarefa):
     except requests.exceptions.RequestException as e:
         raise Exception(f"Erro ao marcar tarefa como concluída: {str(e)}")
 
+def editar_tarefa(id_tarefa, titulo=None, descricao=None, completa=None):
+    """Edita uma tarefa existente"""
+    try:
+        # Monta o objeto de dados apenas com os campos fornecidos
+        data = {}
+        if titulo is not None:
+            data['titulo'] = titulo
+        if descricao is not None:
+            data['descricao'] = descricao
+        if completa is not None:
+            data['completa'] = completa
+        
+        # Se não houver dados para atualizar, retorna erro
+        if not data:
+            raise Exception("Nenhum campo fornecido para atualização")
+        
+        response = requests.patch(
+            f'{API_BASE_URL}/tarefa?id_tarefas=eq.{id_tarefa}',
+            headers=HEADERS,
+            json=data,
+            timeout=10
+        )
+        response.raise_for_status()
+        resultado = response.json()
+        if isinstance(resultado, list) and len(resultado) > 0:
+            return resultado[0]
+        return resultado
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Erro ao editar tarefa: {str(e)}")
+
 def deletar_tarefa(id_tarefa):
     """Deleta uma tarefa"""
     try:
