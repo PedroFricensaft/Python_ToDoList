@@ -18,14 +18,14 @@ addButton.addEventListener('click', () => {
 closeModal.addEventListener('click', () => {
     modalOverlay.classList.remove('active');
     document.body.style.overflow = 'auto';
-    taskForm.reset();
+    resetarModal();
 });
 
 // Fechar modal ao clicar em Cancelar
 cancelBtn.addEventListener('click', () => {
     modalOverlay.classList.remove('active');
     document.body.style.overflow = 'auto';
-    taskForm.reset();
+    resetarModal();
 });
 
 // Fechar modal ao clicar fora dele (no overlay)
@@ -33,7 +33,7 @@ modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) {
         modalOverlay.classList.remove('active');
         document.body.style.overflow = 'auto';
-        taskForm.reset();
+        resetarModal();
     }
 });
 
@@ -42,7 +42,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modalOverlay.classList.contains('active')) {
         modalOverlay.classList.remove('active');
         document.body.style.overflow = 'auto';
-        taskForm.reset();
+        resetarModal();
     }
 });
 
@@ -184,6 +184,33 @@ async function marcarConcluida(id) {
     }
 }
 
+// Função para editar tarefa
+async function editarTarefa(id, titulo, descricao, completa) {
+    try {
+        const response = await fetch(`${API_URL}/tarefas/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                titulo: titulo,
+                descricao: descricao || '',
+                completa: completa
+            })
+        });
+        
+        if (response.ok) {
+            return await response.json();
+        } else {
+            const data = await response.json().catch(() => ({ erro: 'Erro desconhecido' }));
+            throw new Error(data.erro || 'Erro ao editar tarefa');
+        }
+    } catch (error) {
+        console.error('Erro ao editar tarefa:', error);
+        throw error;
+    }
+}
+
 // Função para deletar tarefa
 async function deletarTarefa(id) {
     try {
@@ -217,6 +244,7 @@ function adicionarTarefaNaLista(tarefa) {
             <input type="checkbox" class="task-checkbox" id="task-${tarefa.id}" ${tarefa.completa ? 'checked' : ''}>
             <label for="task-${tarefa.id}" class="task-checkbox-label"></label>
             <div class="task-title">${tarefa.titulo}</div>
+            <button class="edit-btn" data-id="${tarefa.id}" title="Editar tarefa">✎</button>
             <button class="delete-btn" data-id="${tarefa.id}" title="Deletar tarefa">×</button>
         </div>
         <div class="task-description">${tarefa.descricao || ''}</div>
@@ -238,24 +266,68 @@ taskForm.addEventListener('submit', async (e) => {
     }
     
     try {
-        await criarTarefa(taskTitle, taskDescription);
+        // Verificar se está editando ou criando
+        const editId = taskForm.dataset.editId;
         
-        // Fechar modal após adicionar
+        if (editId) {
+            // Modo edição
+            const completa = taskForm.dataset.editCompleta === 'true';
+            await editarTarefa(parseInt(editId), taskTitle, taskDescription, completa);
+        } else {
+            // Modo criação
+            await criarTarefa(taskTitle, taskDescription);
+        }
+        
+        // Fechar modal após salvar
         modalOverlay.classList.remove('active');
         document.body.style.overflow = 'auto';
-        taskForm.reset();
+        resetarModal();
         
         // Recarregar lista de tarefas mantendo o filtro atual
         await carregarTarefas(filtroAtual);
     } catch (error) {
-        alert('Erro ao criar tarefa: ' + error.message);
+        const modo = taskForm.dataset.editId ? 'editar' : 'criar';
+        alert(`Erro ao ${modo} tarefa: ` + error.message);
     }
 });
+
+// Função para abrir modal de edição
+function abrirModalEdicao(tarefa) {
+    // Preencher o formulário com os dados da tarefa
+    document.querySelector("#taskTitle").value = tarefa.titulo;
+    document.querySelector("#taskDescription").value = tarefa.descricao || '';
+    
+    // Mudar o título do modal e o botão
+    const modalHeader = document.querySelector(".modal-header h2");
+    const submitBtn = document.querySelector(".btn-submit");
+    modalHeader.textContent = "Editar Tarefa";
+    submitBtn.textContent = "Salvar Alterações";
+    
+    // Armazenar o ID da tarefa sendo editada
+    taskForm.dataset.editId = tarefa.id;
+    taskForm.dataset.editCompleta = tarefa.completa;
+    
+    // Abrir modal
+    modalOverlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+// Função para resetar modal para modo de criação
+function resetarModal() {
+    taskForm.reset();
+    taskForm.removeAttribute('data-edit-id');
+    taskForm.removeAttribute('data-edit-completa');
+    const modalHeader = document.querySelector(".modal-header h2");
+    const submitBtn = document.querySelector(".btn-submit");
+    modalHeader.textContent = "Adicione nova Tarefa";
+    submitBtn.textContent = "Adicionar Tarefa";
+}
 
 // Função para adicionar event listeners nas tarefas
 function adicionarEventListeners() {
     const taskItems = document.querySelectorAll('.task-item');
     const taskCheckboxes = document.querySelectorAll('.task-checkbox');
+    const editButtons = document.querySelectorAll('.edit-btn');
     const deleteButtons = document.querySelectorAll('.delete-btn');
     
     // Gerenciar checkboxes - marcar/desmarcar como concluída
@@ -275,6 +347,20 @@ function adicionarEventListeners() {
                     checkbox.checked = false;
                     alert('Erro ao marcar tarefa como concluída');
                 }
+            }
+        });
+    });
+    
+    // Botões de editar
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const taskId = parseInt(btn.dataset.id);
+            
+            // Encontrar a tarefa na lista
+            const tarefa = todasTarefas.find(t => t.id === taskId);
+            if (tarefa) {
+                abrirModalEdicao(tarefa);
             }
         });
     });
@@ -300,13 +386,15 @@ function adicionarEventListeners() {
     // Mostrar/esconder descrição ao clicar na tarefa
     taskItems.forEach(item => {
         item.addEventListener('click', (e) => {
-            // Não expandir se clicar no checkbox, label, ou botão de deletar
+            // Não expandir se clicar no checkbox, label, ou botões de ação
             if (e.target.classList.contains('task-checkbox') || 
                 e.target.classList.contains('task-checkbox-label') ||
                 e.target.classList.contains('delete-btn') ||
+                e.target.classList.contains('edit-btn') ||
                 e.target.closest('.task-checkbox-label') ||
                 e.target.closest('.task-checkbox') ||
-                e.target.closest('.delete-btn')) {
+                e.target.closest('.delete-btn') ||
+                e.target.closest('.edit-btn')) {
                 return;
             }
             

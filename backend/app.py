@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from supabase_client import get_tarefas, criar_tarefa, marcar_concluida, deletar_tarefa
+from supabase_client import get_tarefas, criar_tarefa, marcar_concluida, deletar_tarefa, editar_tarefa
 import sys
 
 # Cria o app Flask
@@ -62,6 +62,42 @@ def criar_tarefa_route():
     except Exception as e:
         error_msg = str(e)
         print(f"❌ Erro em listar_tarefas: {error_msg}")
+        return jsonify({'erro': error_msg}), 500
+
+# Editar tarefa
+@app.route('/tarefas/<int:id>', methods=['PUT'])
+def editar_tarefa_route(id):
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'erro': 'Nenhum dado fornecido para atualização'}), 400
+        
+        # Extrai os campos que podem ser editados
+        titulo = data.get('titulo')
+        descricao = data.get('descricao')
+        completa = data.get('completa')
+        
+        # Chama a função de edição
+        tarefa = editar_tarefa(id, titulo=titulo, descricao=descricao, completa=completa)
+        
+        if not tarefa:
+            return jsonify({'erro': 'Tarefa não encontrada'}), 404
+        
+        # Formata a resposta
+        tarefa_formatada = {
+            'id': tarefa.get('id_tarefas'),
+            'titulo': tarefa.get('titulo', ''),
+            'descricao': tarefa.get('descricao') or '',
+            'completa': tarefa.get('completa', False),
+            'id_usuario': tarefa.get('id_usuario')
+        }
+        
+        return jsonify(tarefa_formatada), 200
+    except Exception as e:
+        error_msg = str(e)
+        if "not found" in error_msg.lower() or "404" in error_msg:
+            return jsonify({'erro': 'Tarefa não encontrada'}), 404
         return jsonify({'erro': error_msg}), 500
 
 # Marcar tarefa como concluída
