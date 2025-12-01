@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Tarefas</title>
+    <link rel="stylesheet" href="css/style.css"> 
+</head>
+<body> 
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2>Menu</h2>
+        </div>
+          <ul class="menu-list">
+            <li><a href="#" class="menu-item"> <span class="text">Pendentes</span></a></li>
+            <li><a href="#" class="menu-item"> <span class="text">Concluídas</span></a></li>
+            </ul>
+            </aside>
+            <main class="content">
+                <header>
+                    <h1>Minha Lista de Tarefas</h1>
+                </header>
+
+                <section class="talk-list">
+                    <ul class="task-list">
+                        <!-- Tarefas serão carregadas dinamicamente do backend -->
+                    </ul>
+                </section>
+
+            </main>
+            <!-- Modal para adicionar nova tarefa -->
+            <div class="modal-overlay" id="modalOverlay">
+                <div class="modal-container">
+                    <div class="modal-header">
+                        <h2>Adicione nova Tarefa</h2>
+                        <button class="close-btn" id="closeModal">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="taskForm">
+                            <div class="form-group">
+                                <label for="taskTitle">Título da Tarefa</label>
+                                <input type="text" id="taskTitle" name="taskTitle" placeholder="Digite o título da tarefa" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="taskDescription">Descrição da Tarefa</label>
+                                <textarea id="taskDescription" name="taskDescription" placeholder="Digite a descrição da tarefa (opcional)" rows="4"></textarea>
+                            </div>
+                            <div class="modal-actions">
+                                <button type="button" class="btn-cancel" id="cancelBtn">Cancelar</button>
+                                <button type="submit" class="btn-submit">Adicionar Tarefa</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <button class="add-task-btn" id="addTaskBtn" title="Adicionar tarefa">+</button>
+</body>
+<script src="js/script.js"></script>
+</html>
