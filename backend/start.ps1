@@ -37,7 +37,7 @@ if (-not $pythonFound) {
         $pythonFound = $true
     }
 }
-
+# TESTE DE ERRO
 if (-not $pythonFound) {
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Red
