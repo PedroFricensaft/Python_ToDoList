@@ -1,3 +1,7 @@
+"""
+Backend Flask usando API REST do Supabase
+Alternativa à conexão direta PostgreSQL (resolve problemas de timeout)
+"""
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from supabase_client import get_tarefas, criar_tarefa, marcar_concluida, deletar_tarefa
@@ -31,9 +35,7 @@ def listar_tarefas():
             })
         return jsonify(tarefas_formatadas), 200
     except Exception as e:
-        error_msg = str(e)
-        print(f"❌ Erro em listar_tarefas: {error_msg}")
-        return jsonify({'erro': error_msg}), 500
+        return jsonify({'erro': str(e)}), 500
 
 # Criar nova tarefa
 @app.route('/tarefas', methods=['POST'])
@@ -60,9 +62,7 @@ def criar_tarefa_route():
         
         return jsonify(tarefa_formatada), 201
     except Exception as e:
-        error_msg = str(e)
-        print(f"❌ Erro em listar_tarefas: {error_msg}")
-        return jsonify({'erro': error_msg}), 500
+        return jsonify({'erro': str(e)}), 500
 
 # Marcar tarefa como concluída
 @app.route('/tarefas/<int:id>/concluir', methods=['PUT'])
@@ -103,10 +103,10 @@ def deletar_tarefa_route(id):
 
 if __name__ == '__main__':
     print("=" * 60)
-    print("🚀 SERVIDOR FLASK INICIANDO")
+    print("🚀 SERVIDOR FLASK INICIANDO (API REST SUPABASE)")
     print("=" * 60)
     
-    # Testa conexão com API REST do Supabase
+    # Testa conexão com API REST
     try:
         print("🔍 Testando conexão com API REST do Supabase...")
         tarefas = get_tarefas()
@@ -136,6 +136,6 @@ if __name__ == '__main__':
         print("\nVerifique:")
         print("  1. Se a porta 5000 está livre")
         print("  2. Se todas as dependências estão instaladas")
-        print("  3. Se a senha do banco está configurada no .env")
+        print("  3. Se a API Key do Supabase está configurada")
         sys.exit(1)
 
