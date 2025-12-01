@@ -180,3 +180,90 @@ def criar_usuario_padrao():
     except:
         pass  # Se falhar, continua mesmo assim
 
+def cadastrar_usuario(nome, email, senha, idade=None):
+    """Cadastra um novo usuário"""
+    try:
+        # Verifica se o email já existe
+        response = requests.get(
+            f'{API_BASE_URL}/usuario?email=eq.{email}',
+            headers=HEADERS,
+            timeout=10
+        )
+        response.raise_for_status()
+        usuarios = response.json()
+        
+        if isinstance(usuarios, list) and len(usuarios) > 0:
+            raise Exception("Email já cadastrado")
+        
+        # Cria o usuário
+        data = {
+            'nome': nome,
+            'email': email,
+            'senha': senha  # Em produção, usar hash da senha
+        }
+        if idade is not None:
+            data['idade'] = idade
+        
+        response = requests.post(
+            f'{API_BASE_URL}/usuario',
+            headers=HEADERS,
+            json=data,
+            timeout=10
+        )
+        response.raise_for_status()
+        resultado = response.json()
+        if isinstance(resultado, list) and len(resultado) > 0:
+            return resultado[0]
+        return resultado
+    except requests.exceptions.RequestException as e:
+        if hasattr(e, 'response') and e.response is not None:
+            if e.response.status_code == 409:
+                raise Exception("Email já cadastrado")
+        raise Exception(f"Erro ao cadastrar usuário: {str(e)}")
+
+def fazer_login(email, senha):
+    """Faz login e retorna os dados do usuário"""
+    try:
+        response = requests.get(
+            f'{API_BASE_URL}/usuario?email=eq.{email}',
+            headers=HEADERS,
+            timeout=10
+        )
+        response.raise_for_status()
+        usuarios = response.json()
+        
+        if not isinstance(usuarios, list) or len(usuarios) == 0:
+            raise Exception("Email ou senha incorretos")
+        
+        usuario = usuarios[0]
+        
+        # Verifica a senha (em produção, comparar hash)
+        if usuario.get('senha') != senha:
+            raise Exception("Email ou senha incorretos")
+        
+        # Remove a senha da resposta
+        usuario_sem_senha = {k: v for k, v in usuario.items() if k != 'senha'}
+        return usuario_sem_senha
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Erro ao fazer login: {str(e)}")
+
+def buscar_usuario_por_id(id_usuario):
+    """Busca um usuário pelo ID"""
+    try:
+        response = requests.get(
+            f'{API_BASE_URL}/usuario?id_usuario=eq.{id_usuario}',
+            headers=HEADERS,
+            timeout=10
+        )
+        response.raise_for_status()
+        usuarios = response.json()
+        
+        if isinstance(usuarios, list) and len(usuarios) > 0:
+            usuario = usuarios[0]
+            # Remove a senha da resposta
+            usuario_sem_senha = {k: v for k, v in usuario.items() if k != 'senha'}
+            return usuario_sem_senha
+        return None
+    except:
+        return None
+

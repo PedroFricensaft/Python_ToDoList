@@ -1,6 +1,44 @@
 // URL da API backend
 const API_URL = 'http://localhost:5000';
 
+// Verificar autenticação ao carregar a página
+async function verificarAutenticacao() {
+    try {
+        const response = await fetch(`${API_URL}/auth/sessao`, {
+            method: 'GET',
+            credentials: 'include'
+        });
+        
+        const data = await response.json();
+        
+        if (!data.autenticado) {
+            // Redireciona para login se não estiver autenticado
+            window.location.href = 'login.html';
+            return null;
+        }
+        
+        return data.usuario;
+    } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+        window.location.href = 'login.html';
+        return null;
+    }
+}
+
+// Função para fazer logout
+async function fazerLogout() {
+    try {
+        await fetch(`${API_URL}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+        window.location.href = 'login.html';
+    } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+        window.location.href = 'login.html';
+    }
+}
+
 const addButton = document.querySelector("#addTaskBtn");
 const modalOverlay = document.querySelector("#modalOverlay");
 const closeModal = document.querySelector("#closeModal");
@@ -53,7 +91,9 @@ let filtroAtual = 'todas'; // 'todas', 'pendentes', 'concluidas'
 // Função para carregar tarefas do backend
 async function carregarTarefas(filtro = 'todas') {
     try {
-        const response = await fetch(`${API_URL}/tarefas`);
+        const response = await fetch(`${API_URL}/tarefas`, {
+            credentials: 'include'
+        });
         
         if (!response.ok) {
             throw new Error(`Erro HTTP: ${response.status}`);
@@ -143,10 +183,10 @@ async function criarTarefa(titulo, descricao) {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
                 titulo: titulo,
-                descricao: descricao || '',
-                id_usuario: 1
+                descricao: descricao || ''
             })
         });
         
@@ -170,7 +210,8 @@ async function criarTarefa(titulo, descricao) {
 async function marcarConcluida(id) {
     try {
         const response = await fetch(`${API_URL}/tarefas/${id}/concluir`, {
-            method: 'PUT'
+            method: 'PUT',
+            credentials: 'include'
         });
         
         if (response.ok) {
@@ -192,6 +233,7 @@ async function editarTarefa(id, titulo, descricao, completa) {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({
                 titulo: titulo,
                 descricao: descricao || '',
@@ -215,7 +257,8 @@ async function editarTarefa(id, titulo, descricao, completa) {
 async function deletarTarefa(id) {
     try {
         const response = await fetch(`${API_URL}/tarefas/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            credentials: 'include'
         });
         
         if (response.ok) {
@@ -417,7 +460,19 @@ function adicionarEventListeners() {
 }
 
 // Event listeners para os botões do menu
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Verificar autenticação primeiro
+    const usuario = await verificarAutenticacao();
+    if (!usuario) {
+        return; // Já redirecionou para login
+    }
+    
+    // Adicionar botão de logout
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', fazerLogout);
+    }
+    
     // Carregar tarefas iniciais
     carregarTarefas('todas');
     
