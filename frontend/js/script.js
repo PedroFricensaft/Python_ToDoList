@@ -1,5 +1,10 @@
-// URL da API backend
-const API_URL = 'http://localhost:5000';
+// URL da API backend (mantém o mesmo host do frontend para compartilhar cookies)
+const API_URL = window.API_URL || (() => {
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    const host = window.location.hostname || 'localhost';
+    const port = 5000;
+    return `${protocol}//${host}:${port}`;
+})();
 
 // Verificar autenticação ao carregar a página
 async function verificarAutenticacao() {

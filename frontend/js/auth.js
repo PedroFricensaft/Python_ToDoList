@@ -1,5 +1,10 @@
-// URL da API backend
-const API_URL = 'http://localhost:5000';
+// URL da API backend (detecta automaticamente o host do frontend)
+const API_URL = window.API_URL || (() => {
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    const host = window.location.hostname || 'localhost';
+    const port = 5000;
+    return `${protocol}//${host}:${port}`;
+})();
 
 // Verificar se está na página de login ou cadastro
 const isLoginPage = window.location.pathname.includes('login.html');

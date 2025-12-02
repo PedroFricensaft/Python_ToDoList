@@ -4,7 +4,7 @@
     align-items: center;
     min-height: 100vh;
     width: 100%;
-    background-color: #ffffff;
+    background: rgb(255, 255, 255);
     padding: 20px;
 }
 
@@ -18,7 +18,7 @@
 }
 
 .auth-header {
-    background: rgb(158, 158, 158);
+    background: rgb(161, 161, 161);
     color: white;
     padding: 40px 30px;
     text-align: center;
@@ -72,7 +72,7 @@
 .auth-form .btn-submit {
     width: 100%;
     padding: 14px;
-    background: rgb(158, 158, 158);
+    background: rgb(87, 87, 87);
     color: white;
     border: none;
     border-radius: 10px;
